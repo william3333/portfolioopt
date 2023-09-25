@@ -9,8 +9,6 @@ from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 
-cache_dir = './yfinance_cache'
-yf.pdr_override(cache_dir=cache_dir)
 
 # Set the page title
 st.title("Portfolio Optimization")
