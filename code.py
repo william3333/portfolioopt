@@ -9,8 +9,11 @@ from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 
+cache_dir = './yfinance_cache'
+yf.pdr_override(cache_dir=cache_dir)
+
 # Set the page title
-st.title("Portfolio Optimization with Streamlit")
+st.title("Portfolio Optimization")
 
 # Input for ticker symbols
 symbols_input = st.text_input("Enter ticker symbols separated by commas (e.g., AAPL, GOOG, MSFT):")
