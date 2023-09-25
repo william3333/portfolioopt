@@ -51,7 +51,7 @@ if symbols_input:
     latest_prices = get_latest_prices(df)
 
     # Input for total portfolio value
-    total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0, step=1000.0)
+    total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0)
 
     # Calculate discrete allocation
     da = DiscreteAllocation(cleaned_weights, latest_prices, total_portfolio_value=total_portfolio_value)
