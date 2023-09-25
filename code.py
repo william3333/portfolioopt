@@ -14,7 +14,7 @@ from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 st.title("Portfolio Optimization")
 
 # Input for ticker symbols
-symbols_input = st.text_input("Enter ticker symbols separated by commas (e.g., AAPL, GOOG, MSFT):")
+symbols_input = st.text_input("Enter ticker symbols separated by commas (e.g., AAPL, GOOG, MSFT):", value="AAPL, GOOG, MSFT")
 
 # Check if symbols are provided
 if symbols_input:
