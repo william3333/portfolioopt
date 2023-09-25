@@ -1,0 +1,6 @@
+pandas
+numpy
+yfinance
+datetime
+pandas_datareader
+pyPortfolioOpt
