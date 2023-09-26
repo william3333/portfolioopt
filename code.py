@@ -16,9 +16,7 @@ from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
-# Simulate asset returns using Monte Carlo simulation
-from pypfopt import monte_carlo
-
+from PortfolioOptimization import montecarlo
 
 # Set the page title
 st.title("Portfolio Optimization")
@@ -45,40 +43,30 @@ if symbols_input:
     returns = df.pct_change()
     cov_matrix_annual = returns.cov() * 252
 
+    mu = expected_returns.mean_historical_return(df)
+    S = risk_models.sample_cov(df)
 
-    # Number of Monte Carlo simulations
-    num_simulations = 10000
+    # Perform Monte Carlo simulation for portfolio optimization
+    mc_simulated_portfolios = montecarlo.portfolio_simulator(returns=df, mu=mu, S=S, num_portfolios=10000)
 
-    # Simulate returns
-    mc_simulated_returns = monte_carlo.portfolio_return(df, num_simulations=num_simulations)
-    
-    # Convert simulated returns to a DataFrame
-    mc_simulated_returns_df = pd.DataFrame(mc_simulated_returns, columns=symbols)
-    
-    # Calculate the expected returns and covariance matrix from Monte Carlo simulations
-    mc_mu = mc_simulated_returns_df.mean()
-    mc_S = mc_simulated_returns_df.cov()
-    
-    # Optimize for max sharpe ratio using Monte Carlo simulated data
-    ef = EfficientFrontier(mc_mu, mc_S)
-    weights = ef.max_sharpe()
-    cleaned_weights = ef.clean_weights()
-    
-    # Display portfolio performance with Monte Carlo simulation
-    st.subheader("Portfolio Performance with Monte Carlo Simulation")
-    st.write("Optimal Weights:")
-    st.write(cleaned_weights)
-    ef.portfolio_performance(verbose=True)
+    # Get the optimal portfolio from Monte Carlo simulation
+    mc_optimal_portfolio = montecarlo.get_optimal_portfolio(mc_simulated_portfolios)
 
+    # Display portfolio performance
+    st.subheader("Portfolio Performance")
+    st.write("Optimal Weights (Monte Carlo):")
+    st.write(mc_optimal_portfolio)
+    st.write("Expected Portfolio Performance (Monte Carlo):")
+    st.write(montecarlo.portfolio_performance(mc_optimal_portfolio, mu=mu, S=S))
 
     latest_prices = get_latest_prices(df)
 
     # Input for total portfolio value
-    total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0)
+    total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0,step=0.01)
 
     # Calculate discrete allocation
-    da = DiscreteAllocation(cleaned_weights, latest_prices, total_portfolio_value=total_portfolio_value)
-    allocation, _ = da.greedy_portfolio()
+    da = DiscreteAllocation(mc_optimal_portfolio, latest_prices, total_portfolio_value=total_portfolio_value)
+    allocation, leftover = da.greedy_portfolio()
 
     # Display allocation results
     st.subheader("Allocation Results")
