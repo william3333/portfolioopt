@@ -7,10 +7,12 @@ ad.user_cache_dir = lambda *args: CACHE_DIR
 Path(CACHE_DIR).mkdir(exist_ok=True)
 
 import yfinance as yf
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+
 from pandas_datareader import data as web
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt import risk_models
@@ -80,10 +82,16 @@ if symbols_input:
     total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0)
 
     # Calculate discrete allocation
-    allocation = {symbol: optimal_weights for symbol in symbols}
-    da = DiscreteAllocation(allocation, latest_prices, total_portfolio_value=total_portfolio_value)
-    discrete_allocation, _ = da.greedy_portfolio()
+    recommended_allocation = {symbol: optimal_weights[i] * total_portfolio_value for i, symbol in enumerate(symbols)}
+    da = DiscreteAllocation(recommended_allocation, latest_prices, total_portfolio_value=total_portfolio_value)
+
+    try:
+        discrete_allocation, _ = da.greedy_portfolio()
+    except ValueError:
+        st.warning("The recommended allocation exceeds the available funds. Please adjust your input values.")
+        discrete_allocation = {}
 
     # Display allocation results
     st.subheader("Allocation Results")
     st.write("Discrete allocation:", discrete_allocation)
+
