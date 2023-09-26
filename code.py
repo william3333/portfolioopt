@@ -12,12 +12,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-
 from pandas_datareader import data as web
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
+
 
 # Set the page title
 st.title("Portfolio Optimization")
@@ -47,34 +47,16 @@ if symbols_input:
     mu = expected_returns.mean_historical_return(df)
     S = risk_models.sample_cov(df)
 
-    # Perform Monte Carlo simulation for portfolio optimization
-    num_portfolios = 10000
-    results = np.zeros((4, num_portfolios))
-    risk_free_rate = 0.02
-
-    for i in range(num_portfolios):
-        weights = np.random.random(len(symbols))
-        weights /= np.sum(weights)
-        
-        portfolio_return = np.sum(mu * weights) * 252
-        portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix_annual, weights)))
-        
-        results[0,i] = portfolio_return
-        results[1,i] = portfolio_stddev
-        results[2,i] = (portfolio_return - risk_free_rate) / portfolio_stddev
-        results[3,i] = weights.sum()
-
-    # Get the optimal portfolio from Monte Carlo simulation
-    max_sharpe_idx = results[2].argmax()
-    optimal_weights = results[3, max_sharpe_idx]
+    # Optimize for max sharpe ratio
+    ef = EfficientFrontier(mu, S)
+    weights = ef.max_sharpe()
+    cleaned_weights = ef.clean_weights()
 
     # Display portfolio performance
     st.subheader("Portfolio Performance")
-    st.write("Optimal Weights (Monte Carlo):")
-    st.write(optimal_weights)
-    st.write("Expected Portfolio Performance (Monte Carlo):")
-    st.write("Expected Return:", results[0, max_sharpe_idx])
-    st.write("Expected Risk (Standard Deviation):", results[1, max_sharpe_idx])
+    st.write("Optimal Weights:")
+    st.write(cleaned_weights)
+    ef.portfolio_performance(verbose=True)
 
     latest_prices = get_latest_prices(df)
 
@@ -82,16 +64,10 @@ if symbols_input:
     total_portfolio_value = st.number_input("Enter your total portfolio value:", value=15000.0)
 
     # Calculate discrete allocation
-    recommended_allocation = {symbol: optimal_weights[i] * total_portfolio_value for i, symbol in enumerate(symbols)}
-    da = DiscreteAllocation(recommended_allocation, latest_prices, total_portfolio_value=total_portfolio_value)
-
-    try:
-        discrete_allocation, _ = da.greedy_portfolio()
-    except ValueError:
-        st.warning("The recommended allocation exceeds the available funds. Please adjust your input values.")
-        discrete_allocation = {}
+    da = DiscreteAllocation(cleaned_weights, latest_prices, total_portfolio_value=total_portfolio_value)
+    allocation, leftover = da.lp_portfolio()
 
     # Display allocation results
     st.subheader("Allocation Results")
-    st.write("Discrete allocation:", discrete_allocation)
-
+    st.write("Discrete allocation:", allocation)
+    st.write('Funds remaining: ${:.2f}'.format(leftover))
