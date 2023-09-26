@@ -57,7 +57,7 @@ if symbols_input:
     st.write("Optimal Weights:")
     st.write(cleaned_weights)
     opt_performace=ef.portfolio_performance(verbose=True)
-    st.write("Optimized Performance:",opt_performace)
+    st.write("Optimized Sharp Ratio:",weights)
     
 
     latest_prices = get_latest_prices(df)
