@@ -1,13 +1,28 @@
+from pathlib import Path
+
+import appdirs as ad
+
+CACHE_DIR = ".cache"
+
+# Force appdirs to say that the cache dir is .cache
+ad.user_cache_dir = lambda *args: CACHE_DIR
+
+# Create the cache dir if it doesn't exist
+Path(CACHE_DIR).mkdir(exist_ok=True)
+
+import yfinance as yf
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import yfinance as yf
 from pandas_datareader import data as web
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
+# Simulate asset returns using Monte Carlo simulation
+from pypfopt import monte_carlo
 
 
 # Set the page title
@@ -35,19 +50,31 @@ if symbols_input:
     returns = df.pct_change()
     cov_matrix_annual = returns.cov() * 252
 
-    mu = expected_returns.mean_historical_return(df)
-    S = risk_models.sample_cov(df)
 
-    # Optimize for max sharpe ratio
-    ef = EfficientFrontier(mu, S)
+    # Number of Monte Carlo simulations
+    num_simulations = 10000
+
+    # Simulate returns
+    mc_simulated_returns = monte_carlo.portfolio_return(df, num_simulations=num_simulations)
+    
+    # Convert simulated returns to a DataFrame
+    mc_simulated_returns_df = pd.DataFrame(mc_simulated_returns, columns=symbols)
+    
+    # Calculate the expected returns and covariance matrix from Monte Carlo simulations
+    mc_mu = mc_simulated_returns_df.mean()
+    mc_S = mc_simulated_returns_df.cov()
+    
+    # Optimize for max sharpe ratio using Monte Carlo simulated data
+    ef = EfficientFrontier(mc_mu, mc_S)
     weights = ef.max_sharpe()
     cleaned_weights = ef.clean_weights()
-
-    # Display portfolio performance
-    st.subheader("Portfolio Performance")
+    
+    # Display portfolio performance with Monte Carlo simulation
+    st.subheader("Portfolio Performance with Monte Carlo Simulation")
     st.write("Optimal Weights:")
     st.write(cleaned_weights)
     ef.portfolio_performance(verbose=True)
+
 
     latest_prices = get_latest_prices(df)
 
@@ -56,7 +83,7 @@ if symbols_input:
 
     # Calculate discrete allocation
     da = DiscreteAllocation(cleaned_weights, latest_prices, total_portfolio_value=total_portfolio_value)
-    allocation, leftover = da.lp_portfolio()
+    allocation, _ = da.greedy_portfolio()
 
     # Display allocation results
     st.subheader("Allocation Results")
