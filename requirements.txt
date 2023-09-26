@@ -5,3 +5,4 @@ yfinance
 datetime
 pandas_datareader
 pyPortfolioOpt
+PortfolioOptimization
