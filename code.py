@@ -57,7 +57,7 @@ if symbols_input:
     st.write("Optimal Weights:")
     st.write(cleaned_weights)
     opt_performance=ef.portfolio_performance(verbose=True)
-    st.write("Optimized Sharp Ratio:",opt_performance[2])
+    st.write("Optimized Sharpe Ratio:",opt_performance[2])
     
     
 
